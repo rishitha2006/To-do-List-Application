@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .task-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .task-list-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container task-container">
+        <h1 class="text-center">To-Do List</h1>
+        <form id="task-form">
+            <div class="form-group">
+                <label for="task">Task</label>
+                <input type="text" class="form-control" id="task" placeholder="Enter a new task" required>
+            </div>
+            <div class="form-group">
+                <label for="responsible">Responsible</label>
+                <input type="text" class="form-control" id="responsible" placeholder="Enter responsible person">
+            </div>
+            <div class="form-group">
+                <label for="datetime">Date & Time</label>
+                <input type="datetime-local" class="form-control" id="datetime">
+            </div>
+            <button type="submit" class="btn btn-primary">Add Task</button>
+            <button type="button" class="btn btn-secondary ml-2" id="cancel-button" style="display: none;">Cancel</button>
+            <button type="button" class="btn btn-warning ml-2" id="update-button" style="display: none;">Update</button>
+        </form>
+        <ul id="taskList" class="list-group mt-3">
+        </ul>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const taskForm = document.getElementById("task-form");
+            const taskList = document.getElementById("taskList");
+            const cancelButton = document.getElementById("cancel-button");
+            const updateButton = document.getElementById("update-button");
+
+            let editTaskIndex = -1; 
+            let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+            tasks.forEach((task, index) => {
+                addTaskToList(task, index);
+            });
+
+            taskForm.addEventListener("submit", function (e) {
+                e.preventDefault();
+
+                const taskInput = document.getElementById("task");
+                const responsibleInput = document.getElementById("responsible");
+                const datetimeInput = document.getElementById("datetime");
+
+                const taskText = taskInput.value.trim();
+                const responsibleText = responsibleInput.value.trim();
+                const datetimeText = datetimeInput.value;
+
+                if (taskText !== "") {
+                    if (editTaskIndex === -1) {
+                        const task = {
+                            task: taskText,
+                            responsible: responsibleText,
+                            datetime: datetimeText
+                        };
+
+                        addTaskToList(task, tasks.length);
+
+                        tasks.push(task);
+                        localStorage.setItem("tasks", JSON.stringify(tasks));
+
+                        taskForm.reset();
+                    } else {
+                        const updatedTask = {
+                            task: taskText,
+                            responsible: responsibleText,
+                            datetime: datetimeText
+                        };
+
+                        updateTaskInList(updatedTask, editTaskIndex);
+
+                        tasks[editTaskIndex] = updatedTask;
+                        localStorage.setItem("tasks", JSON.stringify(tasks));
+                        taskForm.reset();
+                        cancelButton.style.display = "none";
+                        updateButton.style.display = "none";
+                        editTaskIndex = -1;
+                    }
+                }
+            });
+
+            function addTaskToList(task, index) {
+                const listItem = document.createElement("li");
+                listItem.classList.add("list-group-item");
+                listItem.innerHTML = `
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>${task.task}</h5>
+                            <p>Responsible: ${task.responsible}</p>
+                            <p>Date & Time: ${task.datetime}</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-success edit-task">Edit</button>
+                            <button class="btn btn-danger ml-2 delete-task">Delete</button>
+                        </div>
+                    </div>
+                `;
+
+                listItem.dataset.taskId = index;
+
+                const editButton = listItem.querySelector(".edit-task");
+                const deleteButton = listItem.querySelector(".delete-task");
+
+                editButton.addEventListener("click", function () {
+                    editTask(listItem, task);
+                });
+
+                deleteButton.addEventListener("click", function () {
+                    deleteTask(listItem, index);
+                });
+
+                taskList.appendChild(listItem);
+            }
+
+            function updateTaskInList(task, index) {
+                const listItem = taskList.children[index];
+                listItem.querySelector("h5").textContent = task.task;
+                listItem.querySelector("p:nth-child(2)").textContent = `Responsible: ${task.responsible}`;
+                listItem.querySelector("p:nth-child(3)").textContent = `Date & Time: ${task.datetime}`;
+            }
+
+            function editTask(listItem, task) {
+                const taskInput = document.getElementById("task");
+                const responsibleInput = document.getElementById("responsible");
+                const datetimeInput = document.getElementById("datetime");
+
+                taskInput.value = task.task;
+                responsibleInput.value = task.responsible;
+                datetimeInput.value = task.datetime;
+
+                updateButton.style.display = "inline";
+                cancelButton.style.display = "inline";
+
+                editTaskIndex = listItem.dataset.taskId;
+            }
+
+            function deleteTask(listItem, index) {
+                listItem.remove();
+
+                tasks.splice(index, 1);
+                localStorage.setItem("tasks", JSON.stringify(tasks));
+
+                editTaskIndex = -1;
+            }
+
+            cancelButton.addEventListener("click", function () {
+                taskForm.reset();
+
+                updateButton.style.display = "none";
+                cancelButton.style.display = "none";
+
+                editTaskIndex = -1;
+            });
+
+            updateButton.addEventListener("click", function () {
+                taskForm.dispatchEvent(new Event("submit"));
+            });
+        });
+    </script>
+</body>
+</html>
