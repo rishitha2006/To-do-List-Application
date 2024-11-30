@@ -1,0 +1,1 @@
+A task management web application built using HTML, CSS, and JavaScript. The app allows users to add, edit, delete, and mark tasks as completed. It provides a simple, user-friendly interface for organizing and prioritizing daily tasks, helping users stay productive and on track.
